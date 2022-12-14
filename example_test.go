@@ -8,8 +8,8 @@ import (
 	"log"
 	"net/http"
 	"testing"
-
-	"github.com/gorilla/websocket"
+	
+	"github.com/gozelle/websocket"
 )
 
 var (

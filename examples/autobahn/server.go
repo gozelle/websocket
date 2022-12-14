@@ -13,8 +13,8 @@ import (
 	"net/http"
 	"time"
 	"unicode/utf8"
-
-	"github.com/gorilla/websocket"
+	
+	"github.com/gozelle/websocket"
 )
 
 var upgrader = websocket.Upgrader{

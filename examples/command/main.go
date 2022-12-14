@@ -13,8 +13,8 @@ import (
 	"os"
 	"os/exec"
 	"time"
-
-	"github.com/gorilla/websocket"
+	
+	"github.com/gozelle/websocket"
 )
 
 var (
@@ -25,16 +25,16 @@ var (
 const (
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
-
+	
 	// Maximum message size allowed from peer.
 	maxMessageSize = 8192
-
+	
 	// Time allowed to read the next pong message from the peer.
 	pongWait = 60 * time.Second
-
+	
 	// Send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
-
+	
 	// Time to wait before force close on connection.
 	closeGracePeriod = 10 * time.Second
 )
@@ -71,7 +71,7 @@ func pumpStdout(ws *websocket.Conn, r io.Reader, done chan struct{}) {
 		log.Println("scan:", s.Err())
 	}
 	close(done)
-
+	
 	ws.SetWriteDeadline(time.Now().Add(writeWait))
 	ws.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 	time.Sleep(closeGracePeriod)
@@ -106,9 +106,9 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		log.Println("upgrade:", err)
 		return
 	}
-
+	
 	defer ws.Close()
-
+	
 	outr, outw, err := os.Pipe()
 	if err != nil {
 		internalError(ws, "stdout:", err)
@@ -116,7 +116,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	}
 	defer outr.Close()
 	defer outw.Close()
-
+	
 	inr, inw, err := os.Pipe()
 	if err != nil {
 		internalError(ws, "stdin:", err)
@@ -124,7 +124,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	}
 	defer inr.Close()
 	defer inw.Close()
-
+	
 	proc, err := os.StartProcess(cmdPath, flag.Args(), &os.ProcAttr{
 		Files: []*os.File{inr, outw, outw},
 	})
@@ -132,24 +132,24 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		internalError(ws, "start:", err)
 		return
 	}
-
+	
 	inr.Close()
 	outw.Close()
-
+	
 	stdoutDone := make(chan struct{})
 	go pumpStdout(ws, outr, stdoutDone)
 	go ping(ws, stdoutDone)
-
+	
 	pumpStdin(ws, inw)
-
+	
 	// Some commands will exit when stdin is closed.
 	inw.Close()
-
+	
 	// Other commands need a bonk on the head.
 	if err := proc.Signal(os.Interrupt); err != nil {
 		log.Println("inter:", err)
 	}
-
+	
 	select {
 	case <-stdoutDone:
 	case <-time.After(time.Second):
@@ -159,7 +159,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		}
 		<-stdoutDone
 	}
-
+	
 	if _, err := proc.Wait(); err != nil {
 		log.Println("wait:", err)
 	}

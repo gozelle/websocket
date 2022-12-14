@@ -13,20 +13,20 @@ import (
 	"os"
 	"strconv"
 	"time"
-
-	"github.com/gorilla/websocket"
+	
+	"github.com/gozelle/websocket"
 )
 
 const (
 	// Time allowed to write the file to the client.
 	writeWait = 10 * time.Second
-
+	
 	// Time allowed to read the next pong message from the client.
 	pongWait = 60 * time.Second
-
+	
 	// Send pings to client with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
-
+	
 	// Poll file for changes with this period.
 	filePeriod = 10 * time.Second
 )
@@ -83,9 +83,9 @@ func writer(ws *websocket.Conn, lastMod time.Time) {
 		case <-fileTicker.C:
 			var p []byte
 			var err error
-
+			
 			p, lastMod, err = readFileIfModified(lastMod)
-
+			
 			if err != nil {
 				if s := err.Error(); s != lastError {
 					lastError = s
@@ -94,7 +94,7 @@ func writer(ws *websocket.Conn, lastMod time.Time) {
 			} else {
 				lastError = ""
 			}
-
+			
 			if p != nil {
 				ws.SetWriteDeadline(time.Now().Add(writeWait))
 				if err := ws.WriteMessage(websocket.TextMessage, p); err != nil {
@@ -118,12 +118,12 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
+	
 	var lastMod time.Time
 	if n, err := strconv.ParseInt(r.FormValue("lastMod"), 16, 64); err == nil {
 		lastMod = time.Unix(0, n)
 	}
-
+	
 	go writer(ws, lastMod)
 	reader(ws)
 }
